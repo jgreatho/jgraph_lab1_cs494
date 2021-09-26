@@ -5,7 +5,7 @@ CFLAGS ?= -Wall -Wextra -std=c++98
 all: $(EXECUTABLES)
 
 clean:
-	rm -f a.out bin/*
+	rm -f a.out bin/* ~/webhome/pegsol.pdf
 
 bin/pegsol: src/pegsol.cpp
 	g++ $(CFLAGS) -o bin/pegsol src/pegsol.cpp
