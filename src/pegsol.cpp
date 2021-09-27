@@ -45,6 +45,7 @@ private:
   // Returns x or y coordiante of peg at index i
   int get_x(const int index); 
   int get_y(const int index);
+  int get_i(const int x, const int y);
 
 };
 
@@ -135,6 +136,16 @@ int jwg_pegboard::get_y(const int i) {
 }
 
 
+//// Get slot index from x and y coordinates ////
+int jwg_pegboard::get_i(const int x, const int y) {
+  int i, index;
+
+  index = y+1;
+  for(i = 0; i < x; i++) index += i+1;
+  return index;
+}
+
+
 //// Check if a slot is full ////
 bool jwg_pegboard::check_full(const int i) {
   int x, y;
@@ -154,9 +165,37 @@ bool jwg_pegboard::check_empty(const int i) {
 
 //// Tests all possible ways to get from curr to goal recursively ////
 bool jwg_pegboard::check_move(const int curr, const int prev, const int goal) {
-  (void) curr;
-  (void) prev;
-  (void) goal;
+  bool possible, isjumppeg;
+  int x, y, px, py, ji;
+
+  // Spot filled, cannot jump
+  if(check_full(curr)) return false;
+  
+  // Get x and y of current peg
+  x = get_x(curr);
+  y = get_y(curr);
+  
+  // Get index of middle "jumped" peg 
+  if(prev != -1) {
+    px = get_x(prev);
+    py = get_y(prev);
+
+//    ji = get_i(
+    
+  }
+
+  // Can jump, reached destination
+  if(curr == goal)                 return  true;
+
+
+  // Recursively check next possible paths
+  possible = 0;
+  // Check four directions
+  if(x>1                 && check_move(get_i(x-2,y),curr,goal)) return 1;
+  if(x<board.size()-3    && check_move(get_i(x+2,y),curr,goal)) return 1;
+  if(y>1                 && check_move(get_i(x,y-2),curr,goal)) return 1;
+  if(y<board[x].size()-3 && check_move(get_i(x,y+2),curr,goal)) return 1;
+  
   return 0;
 }
 
@@ -167,7 +206,7 @@ bool jwg_pegboard::try_move(const int start, const int end) {
 
 
 bool jwg_pegboard::game_over() {
-  return (bool)gameover;
+  return gameover;
 }
 
 
@@ -217,7 +256,7 @@ char usag2[] = "defaults:  ------  ----- 0 (zero-indexed) ----  ----- 10 ----  -
 int main(int argc, char **argv) {
   stringstream ss;
   string temp;
-  bool dup;
+  bool dup, badmove;
   int empty, total;
 
   jwg_pegboard *game;
@@ -266,24 +305,21 @@ int main(int argc, char **argv) {
   //cin.clear();
   totalbadmoves = 1;
   while(getline(cin,temp) && !(game->game_over()) && totalbadmoves <= 35) {
-    // Read and check user input
+    badmove = 0;
     ss.clear(); //cout << temp << endl;
-    ss.str(temp);
-    ss >> start; //cout << start << endl;
-    if(ss.fail() || (start<0 || start>total-1)) {
-      cerr << "Bad move: \"" << temp << "\"\n";
-      totalbadmoves++;
-      continue;
-    }
-    ss >> end; //cout << end << endl;
-    if(ss.fail() || (end<0 || end>total-1)) {
-      cerr << "Bad move: \"" << temp << "\"\n";
-      totalbadmoves++;
-      continue;
-    }
 
-    // Try given move
-    game->try_move(start, end);
+    // Read and check user input
+    ss.str(temp);
+    ss >> start;         //cout << start << endl;
+    if(ss.fail() || (start<0 || start>total-1)) badmove = 1;
+    ss >>   end;         //cout <<   end << endl;
+    if(ss.fail() || (end<0 || end>total-1))     badmove = 1;
+    
+    if(badmove || !game->try_move(start,end)) {
+      cerr << "Bad move: \"" << temp << "\"\n";
+      totalbadmoves++;
+      continue;
+    }
 
     // Request next move
     if(game->game_over()) continue;
