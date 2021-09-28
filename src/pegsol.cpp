@@ -17,6 +17,7 @@ public:
   jwg_pegboard();
   jwg_pegboard(const int empty, const int slots, const bool dup);
 
+  int apply_move(const int start, const int jump, const int end);
   bool try_move(const int start, const int end);
   bool print(const int offset);
   bool game_over();
@@ -121,7 +122,7 @@ int jwg_pegboard::get_x(const int i) {
   map<int,string>::iterator it;
 
   it = coords.find(i);
-  if(it == coords.end() || !it->second.empty() ) return (int)(it->second[0] - '0');
+  if(it != coords.end() || !it->second.empty() ) return (int)(it->second[0] - '0');
   else return -1;
 }
 
@@ -131,7 +132,7 @@ int jwg_pegboard::get_y(const int i) {
   map<int,string>::iterator it;
 
   it = coords.find(i);
-  if(it == coords.end() || !it->second.empty() ) return (int)(it->second[2] - '0');
+  if(it != coords.end() || !it->second.empty() ) return (int)(it->second[2] - '0');
   else return -1;
 }
 
@@ -142,6 +143,7 @@ int jwg_pegboard::get_i(const int x, const int y) {
 
   index = y+1;
   for(i = 0; i < x; i++) index += i+1;
+  if(coords.find(i) == coords.end()) return -1;
   return index;
 }
 
@@ -152,7 +154,7 @@ bool jwg_pegboard::check_full(const int i) {
 
   x = get_x(i);
   y = get_x(i);
-  if('X' ==  board[x][y] ) return 1;
+  if('O' ==  board[x][y] ) return 1;
   return 0;
 }
 
@@ -163,38 +165,73 @@ bool jwg_pegboard::check_empty(const int i) {
 }
 
 
+//// Trust user input ////
+int jwg_pegboard::apply_move(const int start, const int jump, const int end) {
+  int sx, sy;
+  int jx, jy;
+  int ex, ey;
+
+  sx = get_x(start);
+  sy = get_y(start);
+  jx = get_x(jump);
+  jy = get_y(jump);
+  ex = get_x(end);
+  ey = get_y(end);
+  
+  
+  if(board[sx][sy] == 'X') return -1;
+  else           board[sx][sy] = 'X';
+  if(board[jx][jy] == 'X') return -1;
+  else           board[jx][jy] = 'X';
+  if(board[ex][ey] == 'O') return -1;
+  else           board[ex][ey] = 'O';
+  return 0;
+}
+
+
 //// Tests all possible ways to get from curr to goal recursively ////
 bool jwg_pegboard::check_move(const int curr, const int prev, const int goal) {
-  bool possible, isjumppeg;
   int x, y, px, py, ji;
 
+  if(curr < 0 || get_x(curr) == -1 || get_y(curr) == -1) return false;
+cerr << "current status: (" << curr << ", " << prev << ", " << goal << ")  curr status: ";
   // Spot filled, cannot jump
-  if(check_full(curr)) return false;
+  if(check_empty(curr)) return false;
   
   // Get x and y of current peg
   x = get_x(curr);
   y = get_y(curr);
-  
+
+cerr << "(" << x << ", " << y << ")"<< endl; 
   // Get index of middle "jumped" peg 
   if(prev != -1) {
     px = get_x(prev);
     py = get_y(prev);
 
-//    ji = get_i(
-    
+//cerr << "(" << px <<  << endl; 
+    if(px < x) ji = get_i(x-1,y);
+    if(px > x) ji = get_i(x+1,y);
+    if(py < y) ji = get_i(x,y-1);
+    if(py > y) ji = get_i(x,y+1);
+//cerr << check_full(ji) << endl; 
   }
 
-  // Can jump, reached destination
-  if(curr == goal)                 return  true;
+  // No jumpable peg, cannot jump
+  if(prev != -1 && check_empty(ji)) return false;
 
+  // Can jump and reached destination
+  if(curr == goal)    return  true;
+
+//cerr << get_i(x
 
   // Recursively check next possible paths
-  possible = 0;
   // Check four directions
-  if(x>1                 && check_move(get_i(x-2,y),curr,goal)) return 1;
-  if(x<board.size()-3    && check_move(get_i(x+2,y),curr,goal)) return 1;
-  if(y>1                 && check_move(get_i(x,y-2),curr,goal)) return 1;
-  if(y<board[x].size()-3 && check_move(get_i(x,y+2),curr,goal)) return 1;
+  if(check_move(get_i(x-2,y-2),curr,goal)) return 1;
+  if(check_move(get_i(x+2,y+2),curr,goal)) return 1;
+  if(check_move(get_i(x,y-2),curr,goal)) return 1;
+  if(check_move(get_i(x,y+2),curr,goal)) return 1;
+  if(check_move(get_i(x-2,y),curr,goal)) return 1;
+  if(check_move(get_i(x+2,y),curr,goal)) return 1;
   
   return 0;
 }
@@ -210,6 +247,21 @@ bool jwg_pegboard::game_over() {
 }
 
 
+//// Get indicies ////
+void print_indicies(const int row, const int outerr) {
+  int i, index;
+
+  index = 0;
+  for(i=0; i<row; i++) {
+    index += i+1;
+  }
+  if(outerr == 1) cout << "pegs: " << index << "-";
+  else            cerr << "pegs: " << index << "-";
+  if(outerr == 1) cout << index+i;
+  else            cerr << index+i;
+}
+
+
 bool jwg_pegboard::print(const int offset) {
   int i, j, k;
   int padsize, lastrowsize;
@@ -220,6 +272,7 @@ bool jwg_pegboard::print(const int offset) {
   for(i = 0; i < (int)board.size(); i++) {
     padsize = lastrowsize - board[i].size();
 
+    if(!dupout) print_indicies(i,1);
     // Print padded row
     if(!dupout) for(k = 0; k < offset; k++)    cout << " "; 
     for(k = 0; k < padsize; k++)   cout << " ";
@@ -235,6 +288,7 @@ bool jwg_pegboard::print(const int offset) {
   for(i = 0; i < (int)board.size(); i++) {
     padsize = lastrowsize - board[i].size();
 
+    print_indicies(i,2);
     // Print padded row
     for(k = 0; k < offset; k++)    cerr << " "; 
     for(k = 0; k < padsize; k++)   cerr << " ";
@@ -260,7 +314,7 @@ int main(int argc, char **argv) {
   int empty, total;
 
   jwg_pegboard *game;
-  int start, end;
+  int start, jump, end;
   int board_offset, totalbadmoves;
 
   // Usage
@@ -298,8 +352,8 @@ int main(int argc, char **argv) {
   // Print board and request first move
   board_offset = 7;
   game->print(board_offset);
-  cerr << "Select a move: (type two numbers)\n";
-  cerr << "             [start slot] [end slot]\n";
+  cerr << "Select a move: (type three numbers)";
+  cerr << " [start slot] [jumped slot] [end slot]\n";
 
   // Iterate until game ends or EOF reached
   //cin.clear();
@@ -312,10 +366,13 @@ int main(int argc, char **argv) {
     ss.str(temp);
     ss >> start;         //cout << start << endl;
     if(ss.fail() || (start<0 || start>total-1)) badmove = 1;
+    ss >>  jump;         //cout <<  jump << endl;
+    if(ss.fail() || (jump<0 || jump>total-1))   badmove = 1;
     ss >>   end;         //cout <<   end << endl;
     if(ss.fail() || (end<0 || end>total-1))     badmove = 1;
     
-    if(badmove || !game->try_move(start,end)) {
+    if(badmove || -1 == game->apply_move(start,jump,end)) {
+      if(!badmove)
       cerr << "Bad move: \"" << temp << "\"\n";
       totalbadmoves++;
       continue;
@@ -324,8 +381,8 @@ int main(int argc, char **argv) {
     // Request next move
     if(game->game_over()) continue;
     game->print(board_offset);
-    cerr << "\nSelect a move: (type two numbers)\n";
-    cerr << "             [start slot] [end slot]\n";
+    cerr << "Select a move: (type three numbers)";
+    cerr << " [start slot] [jumped slot] [end slot]\n";
     temp.clear();
   }
 
