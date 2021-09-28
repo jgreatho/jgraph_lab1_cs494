@@ -1,8 +1,8 @@
 # jgraph_lab1_cs494
-##Pegboard Game and Complimentary Board Visualizer in Jgraph
+## Pegboard Game and Complimentary Board Visualizer in Jgraph
 
 
-###Use the following steps to run this program:
+### Use the following steps to run this program:
   1. Make the _executables_
     - this includes calling make from within jgraph
 
