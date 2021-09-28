@@ -4,7 +4,7 @@
 
 ### Use the following steps to run this program:
   1. Make the _executables_
-    - this includes calling make from within jgraph
+    - this includes calling "make" from within jgraph
 
   2. Run the _liveView.sh_ script
     - this will generate a pdf of the board
