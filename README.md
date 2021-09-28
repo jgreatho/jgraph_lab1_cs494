@@ -13,7 +13,7 @@
     - but how? refer to step 3
 
   3. In a browser window look at the file "pegsol.pdf"
-    - to do this visit the following address *http://web.eecs.utk.edu/~[your-netid]/pegsol.pdf*
+    - to do this visit the following address *http://web.eecs.utk.edu/~your-netid/pegsol.pdf*
 
   4. Refresh the page every time you make a move
 
